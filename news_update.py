@@ -20,8 +20,7 @@ from gensim.parsing.preprocessing import STOPWORDS
 
 import time
 
-# ------------------------ News Update ---------------------------- #
-# ------------------------ Web Crawler ---------------------------- #
+# ------------------------  Update ข่าวแต่ละ ---------------------------- #
 
 # for th nlp
 stopword = list(i for i in corpus.thai_stopwords())          # list stopword
@@ -39,7 +38,7 @@ with open(Pkl_Filename, 'rb') as file:
     file.close()
 
 # อ่านไฟล์ที่เก็บคำศัพท์ ใช้ในขั้นตอนการทำ sentiment
-f = open('vocabulary.txt', 'r')
+f = open('C:/Users/User/workspace-software/sw2/model/vocabulary.txt', 'r')
 s = f.read()
 f.close()
 s = s.replace('{','')
@@ -161,7 +160,7 @@ class Update_news() :
         
     def update_news(self):
         date = datetime.datetime.now().strftime('%Y-%m-%d')
-        path_file = '{}.csv'.format(date)
+        path_file = 'C:/Users/User/workspace-software/sw2/database/{}.csv'.format(date)
 
         if os.path.isfile(path_file):          # มี file วันนี้แล้ว
             df = pd.read_csv(path_file)        # อ่านมา
