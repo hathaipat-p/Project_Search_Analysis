@@ -39,10 +39,6 @@ import os.path
 import json
 import unittest
 
-# progress bar : https://pythonpyqt.com/pyqt-progressbar/
-
-###########    twitter API search ย้อนหลัง 7 วัน และหาจาก database     ###############
-###########    update ข่าวในแต่ละวันไว้แล้ว ดึง daatbase ตอนต้องการค้นหา    ###############
 
 class Twitter(QThread):
     _signal = pyqtSignal(int)                       # ใช้ pyqtsignal เพื่อส่งสัญญาณไปหา main window เพื่อไปอัพเดต progress bar
@@ -105,9 +101,9 @@ class Twitter(QThread):
 
         path_index = "C:/Users/User/workspace-software/sw2/Twitter/indexing.json"   # ไฟล์ที่ใช้เก็บตำแหน่งข้อมูลคำที่เคยค้นหา
 
-        get_data = 0            # ตัวแปรนับวันที่มีข้อมูลอยู่แล้วหรือทำการค้นหาข้อมูลใหม่(โดยอยู่ใน 7 วันย้อนหลัง)
+        get_data = 0                                # ตัวแปรนับวันที่มีข้อมูลอยู่แล้วหรือทำการค้นหาข้อมูลใหม่(โดยอยู่ใน 7 วันย้อนหลัง)
 
-        date_selected = []          # วันที่มีข้อมูลไว้ return ค่า
+        date_selected = []                                  # วันที่มีข้อมูลไว้ return ค่า
 
         if os.path.exists(path_index) :             # เช็คว่ามีไฟล์ที่ใช้เก็บข้อมูลไหม(json) ถ้ามีก็อ่านมา
             with open(path_index) as file:
@@ -192,10 +188,6 @@ class Twitter(QThread):
         else :                                      # ถ้าไม่มีไฟล์ให้สร้าง dataframe ใหม่
             df = pd.DataFrame(columns= ['key','tokenize','sentiment_Positive','sentiment_Negative','sentiment_Neutral'] )
 
-        # f = open('C:/Users/User/workspace-software/sw2/Twitter/list_keyword.txt', 'a' , encoding='utf8' ) # เปิดไฟล์ list keyword แล้วเพิ่ม keyword เข้าไป
-        # f.write(  query + " " )
-        # f.close()
-
         all_text = []                   # เก็บ text ทั้งหมดแล้วเอาไป tokenize ที่เดียว
 
         for tweet in tweet_cursor_en:
@@ -257,9 +249,8 @@ class Twitter(QThread):
                     lang_th.append(word)
                     continue
             # for en
-            text_tokens = word_tokenize(text)               # tokenize
             ps = PorterStemmer()
-            for token in text_tokens:
+            for token in sentence:
                 token = token.lower()
                 if re.match(r'[a-zA-Z]{3,}', token) != None and token not in self.all_stopword  :           # กรองให้เหลือแต่ภาษาอังกฤษและไม่เอา stopword
                     lang_en.append(ps.stem(token))                                                              # แปลงคำให้เป็นรากศัพท์
@@ -314,7 +305,7 @@ class Twitter(QThread):
         for token in union_tokenize : 
             if token in count.keys() :                                   # ถ้าใน dict มีคำนี้อยู่แล้วให้นับเพิ่ม
                 count[token] += 1
-            if token not in count.keys() and token != keyword:                               # ถ้าใน dict ไม้มีคำนี้อยู่แล้วให้เริ่มนับเป็นตัวใหม่
+            if token not in count.keys() and token not in keyword and keyword not in token:                               # ถ้าใน dict ไม้มีคำนี้อยู่แล้วให้เริ่มนับเป็นตัวใหม่
                 count[token] = 1
         rank = {k: v for k, v in sorted(count.items(), key=lambda item: item[1])}               # sort dict
 
@@ -407,7 +398,7 @@ class News(QThread):
                 df = pd.read_csv(path_file)                                 # อ่านไฟล์เก็บข่าวแต่ละวันมา
 
                 for n in range(len(df)) :
-                    key = df._get_value( n , 'tokenize')         
+                    key = df._get_value( n , 'headline')         
                     if self.keyword in key :                                    # เช็คว่ามี keyword ที่ต้องการในข้อมูลใดบ้าง และนำค่า sentiment ที่ทำไว้มา
                         self.total_news += 1                         
                         positive += df._get_value( n , 'positive')
@@ -535,50 +526,50 @@ class MyApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
     # when click search button
     def search(self):   
 
-        self.get_text = self.text_input.text()           # คำที่ไปค้นหา twitter
+        self.get_text = self.text_input.text()                      # คำที่ไปค้นหา twitter
         self.get_text = re.sub('#', '', self.get_text)
         self.get_text = self.get_text.lower()
 
-        self.news_text = self.news_input.text()          # คำที่ไปค้นหาข่าว
+        self.news_text = self.news_input.text()                     # คำที่ไปค้นหาข่าว
         self.news_text = re.sub('#', '', self.news_text)
         self.news_text = self.news_text.lower()
 
-        self.get_ticker = self.stock_input.text()          # คำที่ไปค้นหาหุ้น
+        self.get_ticker = self.stock_input.text()                   # คำที่ไปค้นหาหุ้น
 
-        date_since = self.date_edit_since.text()            # get since input
-        self.since = date_since.replace('/','-')             # since ที่ได้ 2021/02/01 เปลี่ยนเป็น 2021-02-01
+        date_since = self.date_edit_since.text()                        # get since input
+        self.since = date_since.replace('/','-')                        # since ที่ได้ 2021/02/01 เปลี่ยนเป็น 2021-02-01
     
-        date_until = self.date_edit_until.text()            # get until input
-        self.until = date_until.replace('/','-')             # until ที่ได้ 2021/02/01 เปลี่ยนเป็น 2021-02-01
+        date_until = self.date_edit_until.text()                        # get until input
+        self.until = date_until.replace('/','-')                        # until ที่ได้ 2021/02/01 เปลี่ยนเป็น 2021-02-01
 
-        since_test = datetime.datetime.strptime(self.since, '%Y-%m-%d')      # แปลงจากท string to datetime     
+        since_test = datetime.datetime.strptime(self.since, '%Y-%m-%d')      # แปลงวันจาก string to datetime     
         until_test = datetime.datetime.strptime(self.until, '%Y-%m-%d')
 
-        if since_test > until_test :    # ถ้าวัน since > until
+        if since_test > until_test :    # ถ้าวัน since > until ให้แจ้งเตือนและไม่ทำ
             self.date_warning.setText('Incorrect Date')
             pass
-        else :  # ถ้าวันที่ถูกต้องก็ให้ไปค้นหาข่าว ทวิตเตอร์ หุ้น
+        else :  # ถ้าวันที่ถูกต้องก็ให้ไปค้นหาข่าว ทวิตเตอร์ หุ้น และล็อกปุ่มค้นหา
             self.date_warning.setText('')
-            self.button_search.setEnabled(False)
+            self.button_search.setEnabled(False)        
             self.search_twitter(self.get_text,self.since,self.until)
             self.search_news(self.news_text,self.since,self.until)
             self.search_stock(self.get_ticker,self.since,self.until)
 
 
-    def signal_accept(self, msg):                   # นับ progress แล้วคำนวณ %
-        self.now_progress += int(msg)                       # now progress คือทำถึงขั้นไหน total progress คือขั้นทั้งหมดที่ต้องทำ
+    def signal_accept(self, msg):                                # นับ progress แล้วคำนวณ %
+        self.now_progress += int(msg)                               # now progress คือทำถึงขั้นไหน total progress คือขั้นทั้งหมดที่ต้องทำ
         cal_bar = self.now_progress / self.total_progress * 100 
         self.progressBar.setValue(cal_bar)
 
-        if self.progressBar.value() >= 90:      # % bar ถึง 90 แปลว่าทำครบหมดแล้ว
+        if self.progressBar.value() >= 90:                          # % bar ถึง 90 แปลว่าทำครบหมดแล้ว
             time.sleep(1)
-            self.progressBar.hide()
+            self.progressBar.hide()                                 # ซ่อน progress bar และ set ค่าเป็น 0
             self.progressBar.setValue(0)
 
 
     def check_finish_task(self):
         self.finish_task += 2
-        if self.finish_task == self.total_progress :
+        if self.finish_task == self.total_progress :            # เมื่อทำคำสั่งเสิร์จทั้งหมดเสร็จ ให้ display image of chart on widget
             self.total_progress  = 0
             self.now_progress = 0
             self.finish_task = 0
@@ -593,12 +584,13 @@ class MyApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
             if self.news_text != '' :
                 self.news_semtiment.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/sentiment_news.png)")
                 self.news_progress.setText('news:finish')
-            self.button_search.setEnabled(True)
+
+            self.button_search.setEnabled(True)     # ปลดล็อกปุ่มค้นหาให้กดได้อีกครั้ง
 
 
 
     def search_twitter(self,keyword,since,until) :
-        self.tweet_ranking.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/04004d.png)")
+        self.tweet_ranking.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/04004d.png)")             # เมื่อเริ่มทำงานจะลบ chart เก่าที่เคยเสร็จก่อนหน้า
         self.tweet_sentiment.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/04004d.png)")
         # ถ้าไม่ได้ใส่คำค้นหา ให้ตั้งพื้นหลังเป็นสีเดียวกับ mainwindow
         if keyword == '' :
@@ -616,7 +608,7 @@ class MyApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 
 
     def search_stock(self,ticker,since,until) :
-        self.stock_graph.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/04004d.png)")
+        self.stock_graph.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/04004d.png)")           # เมื่อเริ่มทำงานจะลบ chart เก่าที่เคยเสร็จก่อนหน้า
         self.stock_progress.setText('stock:progress')
         # ถ้าไม่ได้ใส่คำค้นหา ให้ตั้งพื้นหลังเป็นสีเดียวกับ mainwindow
         if ticker == '' :
@@ -632,7 +624,7 @@ class MyApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 
 
     def search_news(self,keyword,since,until) :
-        self.news_semtiment.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/04004d.png)")
+        self.news_semtiment.setStyleSheet("border-image : url(C:/Users/User/workspace-software/sw2/gui/04004d.png)")        # เมื่อเริ่มทำงานจะลบ chart เก่าที่เคยเสร็จก่อนหน้า
         self.news_progress.setText('news:progress')
         # ถ้าไม่ได้ใส่คำค้นหา ให้ตั้งพื้นหลังเป็นสีเดียวกับ mainwindow
         if keyword == '' :
@@ -671,7 +663,7 @@ class MyApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         text = ''
         for trend in worldwide_trends[0]["trends"]:
             text = text + str(trend["name"]) + "\n"                 # เข้าถึงชื่อ hashtag
-            self.trend_ww.addItem(str(trend["name"]))               # แสดงในโปแกรม
+            self.trend_ww.addItem(str(trend["name"]))               # แสดงในโปรแกรม
 
 
     def trend_twitter_TH(self):
@@ -692,7 +684,7 @@ class MyApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         text = ''
         for trend in thailand_trends[0]["trends"]:
             text = text + str(trend["name"]) + "\n"             # เข้าถึงชื่อ hashtag 
-            self.trend_th.addItem(str(trend["name"]))           # แสดงในโปแกรม
+            self.trend_th.addItem(str(trend["name"]))           # แสดงในโปรแกรม
 
 
 class Unit_test(unittest.TestCase):
@@ -704,16 +696,17 @@ class Unit_test(unittest.TestCase):
         self.assertEqual(obj_twitter.is_data_exist('covid', '2021-04-15', '2021-04-13'), False)            # วันที่ผิด
 
         self.assertEqual(obj_twitter.clean_text(['ผมรักเมืองไทย']), ['รัก', 'เมือง', 'ไทย'])        # test nlp
+        self.assertEqual(obj_twitter.clean_text(['さようなら สวัสดี']), ['สวัสดี'])                 # กรณีเป็นภาษาอื่นจะไม่นำมาคิด
         self.assertEqual(obj_twitter.sentiment_analysis(['ผมรักเมืองไทย']) , (1,0,0) )          # test sentiment
+        self.assertEqual(obj_twitter.sentiment_analysis(['さようなら']) , (0,0,0) )          # กรณีเป็นภาษาอื่นจะไม่นำมาคิด
 
 
-    # กำลังแก้ไขยังไม่ได้ทำ unittest เพิ่ม
-    # def test_news(self):
-        # obj_news_1 = News('covid', '2021-04-17', '2021-04-17')      
-        # self.assertNotEqual(obj_news_1.check_test(), 0 )             # มีข่าว
+    def test_news(self):
+        obj_news_1 = News('covid', '2021-04-17', '2021-04-17')      
+        self.assertNotEqual(obj_news_1.check_test(), 0 )             # มีข่าว  obj_news_1.check_test() retrun จำนวนข่าวที่พบ
 
-        # obj_news_2 = News('covid', '2021-01-13', '2021-01-14')      
-        # self.assertEqual(obj_news_2.check_test(), 0 )            # ไม่มีข่าว
+        obj_news_2 = News('covid', '2021-01-13', '2021-01-14')      
+        self.assertEqual(obj_news_2.check_test(), 0 )            # ไม่มีข่าว
 
 
     def test_stock(self):
@@ -729,7 +722,7 @@ class Unit_test(unittest.TestCase):
         obj_stock_4 = Stock('scgp', '2021-04-10', '2021-04-20')
         self.assertEqual(obj_stock_4.check_test(), False)           # ชื่อหุ้นไม่ถูกต้อง
 
-        obj_stock_5 = Stock('amzn', '2021-04-22', '2021-04-22')
+        obj_stock_5 = Stock('amzn', '2021-04-28', '2021-04-28')
         self.assertEqual(obj_stock_5.check_test(), False)           # ค้นหาวันปัจจุบันวันเดียว (ราคายังไม่ได้สรุป)
 
 
