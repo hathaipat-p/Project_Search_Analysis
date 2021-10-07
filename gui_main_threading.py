@@ -157,10 +157,10 @@ class Twitter(QThread):
 
     # กรณีืั้ search witter APi ใหม่
     def search_twitter(self,query,date) :                   
-        consumer_key = 'y5d0ITLnzCcYtNTihMrPFn3Tm'
-        consumer_secret = 'AdyZvazCh8wyg0oqek96ZF2707RO3GYJ8SMBfXGrJFY6nvi3wj'
-        access_token = '4864672590-hbqrYcNsjKyZFc0zTgbmHveB31HkwEuPwS26DJ2'
-        access_token_secret = 'U636epuueZi3N5QdV0RwVqPBBX7PD4Ziqw17y5foQVSqf'
+        consumer_key = 'xxxxxxxxxxx'
+        consumer_secret = 'xxxxxxxxxxxxxx'
+        access_token = 'xxxxxxxxxxxxxxxxx'
+        access_token_secret = 'xxxxxxxxxxxxxx'
 
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
